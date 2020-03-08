@@ -1,1 +1,1 @@
-# Gsteway for nibbledb
+# Gateway for nibbledb
