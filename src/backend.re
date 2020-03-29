@@ -1,3 +1,12 @@
+open Lwt.Infix;
+
+type t = {
+  backend_uri: string
+};
+
+let create = (~backend_uri) => {
+  backend_uri: backend_uri
+};
 
 let empty_data = Ezjsonm.list(Ezjsonm.unit,[]);
 
@@ -46,8 +55,8 @@ let delete = (~id_list: list(string), ~json: Ezjsonm.t) => {
   Lwt.return_unit
 }
 
-let read_last = (~id_list: list(string), ~n: int, ~xargs: list(string)) => {
-  Lwt.return(empty_data);
+let read_last = (~ctx, ~id_list: list(string), ~n: int, ~xargs: list(string)) => {
+  Net.get(~uri=ctx.backend_uri) >|= Ezjsonm.from_string;
 }
 
 let read_latest = (~id_list: list(string), ~xargs: list(string)) => {

@@ -9,8 +9,10 @@ let log_mode = ref(false);
 let tls_mode = ref(false);
 let cert_file = ref("/tmp/server.crt");
 let key_file = ref("/tmp/server.key");
+let backend_uri = ref("http://localhost:8000")
 
 type t = {
+  db: Backend.t,
   m: Lwt_mutex.t
 };
 
@@ -59,7 +61,7 @@ let post_req = (ctx, path_list, body) => {
 
 let read_last = (ctx, ids, n, xargs) => {
   let id_list = String.split_on_char(',', ids);
-  Backend.read_last(~id_list, ~n=int_of_string(n), ~xargs) >|=
+  Backend.read_last(~ctx=ctx.db, ~id_list, ~n=int_of_string(n), ~xargs) >|=
     Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
 };
 
@@ -201,7 +203,12 @@ let parse_cmdline = () => {
       ": to set the http port"
     ), 
     ("--enable-debug", Arg.Set(log_mode), ": turn debug mode on"), 
-    ("--enable-tls", Arg.Set(tls_mode), ": use https") 
+    ("--enable-tls", Arg.Set(tls_mode), ": use https"),
+    (
+      "--backend-uri",
+      Arg.Set_string(backend_uri),
+      ": to provide the location of nibbledb server"
+    ), 
 
   ];
   Arg.parse(speclist, x => raise(Arg.Bad("Bad argument : " ++ x)), usage);
@@ -222,7 +229,7 @@ let init = () => {
   let () = ignore(register_signal_handlers());
   parse_cmdline();
   log_mode^ ? enable_debug() : ();
-  { 
+  { db: Backend.create(~backend_uri=backend_uri^),
     m: Lwt_mutex.create()
   };
 };

@@ -1,3 +1,6 @@
+type t;
+
+let create: (~backend_uri: string) => t;
 
 let validate_json: Ezjsonm.t => option((int64, Ezjsonm.t));
 
@@ -13,7 +16,7 @@ let length_of_index: (~id_list: list(string)) => Lwt.t(int);
 
 let delete: (~id_list: list(string), ~json: Ezjsonm.t) => Lwt.t(unit);
 
-let read_last: (~id_list: list(string), ~n: int, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
+let read_last: (~ctx: t, ~id_list: list(string), ~n: int, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
 
 let read_latest: (~id_list: list(string), ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
 
