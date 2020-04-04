@@ -9,7 +9,7 @@ let log_mode = ref(false);
 let tls_mode = ref(false);
 let cert_file = ref("/tmp/server.crt");
 let key_file = ref("/tmp/server.key");
-let backend_uri = ref("http://localhost:8000")
+let backend_uri_list = ref("http://localhost:8000");
 
 type t = {
   db: Backend.t,
@@ -36,110 +36,40 @@ module Http_response {
   };
 };
 
-let post_worker = (ctx, id, json) => {
-  switch(Backend.validate_json(json)) {
-  | Some((t,j)) => Backend.write(~timestamp=t, ~id=id, ~json=j)
-  | None => failwith("Error:badly formatted JSON\n")
-  };
-}
 
-let post = (ctx, id, body) => {
-  open Ezjsonm;
-  body |> Cohttp_lwt.Body.to_string >|=
-    Ezjsonm.from_string >>= json => switch(json) {
-    | `O(_) => post_worker(ctx, id, json) 
-    | `A(lis) => Lwt_list.iter_s(x => post_worker(ctx, id, `O(get_dict(x))), lis)
-    } >>= fun () => Http_response.ok()
-};
 
-let post_req = (ctx, path_list, body) => {
-  switch (path_list) {
-  | [_, _, _, "ts", id] => post(ctx, id, body)
-  | _ => failwith("Error:unknown path\n")
-  }
-};
-
-let read_last = (ctx, ids, n, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_last(~ctx=ctx.db, ~id_list, ~n=int_of_string(n), ~xargs) >|=
+let read_last = (ctx, uri_path) => {
+  Backend.read_last(ctx.db, uri_path) >|=
     Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
 };
 
-let read_first = (ctx, ids, n, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_first(~id_list, ~n=int_of_string(n), ~xargs) >|=
-    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
-};
-
-let read_since = (ctx, ids, from, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_since(~id_list, ~from=Int64.of_string(from), ~xargs) >|=
-    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
-};
-
-let delete_since = (ctx, ids, from, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_since(~id_list, ~from=Int64.of_string(from), ~xargs) >>=
-    json => Backend.delete(~id_list, ~json) >>= 
-      () => Http_response.ok() 
-};
-
-let read_range = (ctx, ids, from, to_, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_range(~id_list, ~from=Int64.of_string(from), ~to_=Int64.of_string(to_), ~xargs) >|=
-    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
-};
-
-let delete_range = (ctx, ids, from, to_, xargs) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.read_range(~id_list, ~from=Int64.of_string(from), ~to_=Int64.of_string(to_), ~xargs) >>=
-    json => Backend.delete(~id_list, ~json) >>=
-      () => Http_response.ok()
-};
-
-let length = (ctx, ids) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.length(~id_list) >>=
+let length = (ctx) => {
+  Backend.length(ctx.db) >>=
     n => Http_response.ok(~content=Printf.sprintf("{\"length\":%d}", n), ()) 
 }
 
-let length_in_memory = (ctx, ids) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.length_in_memory(~id_list) >>=
+let length_in_memory = (ctx) => {
+  Backend.length_in_memory(ctx.db) >>=
     n => Http_response.ok(~content=Printf.sprintf("{\"length\":%d}", n), ()) 
 }
 
-let length_of_index = (ctx, ids) => {
-  let id_list = String.split_on_char(',', ids);
-  Backend.length_of_index(~id_list) >>=
+let length_of_index = (ctx) => {
+  Backend.length_of_index(ctx.db) >>=
     n => Http_response.ok(~content=Printf.sprintf("{\"length\":%d}", n), ()) 
 }
 
 let timeseries_sync = (ctx) => {
-  Backend.flush() >>=
+  Backend.flush(ctx.db) >>=
     () => Http_response.ok()
 }
 
-let get_req = (ctx, path_list) => {
+let get_req = (ctx, path_list, uri_path) => {
   switch (path_list) {
-  | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, ids, n, xargs)
-  | [_, _, _, "ts", ids, "latest", ...xargs] => read_last(ctx, ids, "1", xargs)
-  | [_, _, _, "ts", ids, "first", n, ...xargs] => read_first(ctx, ids, n, xargs)
-  | [_, _, _, "ts", ids, "earliest", ...xargs] => read_first(ctx, ids, "1", xargs)
-  | [_, _, _, "ts", ids, "since", from, ...xargs] => read_since(ctx, ids, from, xargs)
-  | [_, _, _, "ts", ids, "range", from, to_, ...xargs] => read_range(ctx, ids, from, to_, xargs)
-  | [_, _, _, "ts", ids, "length"] => length(ctx, ids)
-  | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx, ids)
-  | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx, ids)
+  | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, uri_path)
+  | [_, _, _, "ts", ids, "length"] => length(ctx)
+  | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx)
+  | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx)
   | [_, _, _, "ts", "sync"] => timeseries_sync(ctx)
-  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
-  }
-};
-
-let delete_req = (ctx, path_list) => {
-  switch (path_list) {
-  | [_, _, _, "ts", ids, "since", from, ...xargs] => delete_since(ctx, ids, from, xargs)
-  | [_, _, _, "ts", ids, "range", from, to_, ...xargs] => delete_range(ctx, ids, from, to_, xargs)
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
@@ -149,9 +79,7 @@ let handle_req_worker = (ctx, req, body) => {
   let uri_path = req |> Request.uri |> Uri.to_string;
   let path_list = String.split_on_char('/', uri_path);
   switch (meth) {
-  | `POST => post_req(ctx, path_list, body);
-  | `GET => get_req(ctx, path_list);
-  | `DELETE => delete_req(ctx, path_list);
+  | `GET => get_req(ctx, path_list, uri_path);
   | _ => Http_response.bad_request(~content="Error:unknown method\n", ())
   }
 };
@@ -205,8 +133,8 @@ let parse_cmdline = () => {
     ("--enable-debug", Arg.Set(log_mode), ": turn debug mode on"), 
     ("--enable-tls", Arg.Set(tls_mode), ": use https"),
     (
-      "--backend-uri",
-      Arg.Set_string(backend_uri),
+      "--backend-uri-list",
+      Arg.Set_string(backend_uri_list),
       ": to provide the location of nibbledb server"
     ), 
 
@@ -229,7 +157,7 @@ let init = () => {
   let () = ignore(register_signal_handlers());
   parse_cmdline();
   log_mode^ ? enable_debug() : ();
-  { db: Backend.create(~backend_uri=backend_uri^),
+  { db: Backend.create(~backend_uri_list=backend_uri_list^),
     m: Lwt_mutex.create()
   };
 };
@@ -237,7 +165,7 @@ let init = () => {
 let flush_server = (ctx) => {
   Lwt_main.run {
     Lwt_io.printf("\nShutting down server...\n") >>=
-      () => Backend.flush() >>=
+      () => Backend.flush(ctx.db) >>=
         () => Lwt_unix.sleep(1.0) >>=
           () => Lwt_io.printf("OK\n")
   };
