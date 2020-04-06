@@ -4,7 +4,7 @@ open Cohttp;
 
 open Cohttp_lwt_unix;
 
-let http_port = ref(8000);
+let http_port = ref(5000);
 let log_mode = ref(false);
 let tls_mode = ref(false);
 let cert_file = ref("/tmp/server.crt");
@@ -35,8 +35,6 @@ module Http_response {
     Server.respond_string(~status=`Internal_server_error, ~body=content, ~headers=text_header, ());
   };
 };
-
-
 
 let read_last = (ctx, uri_path) => {
   Backend.read_last(ctx.db, uri_path) >|=
