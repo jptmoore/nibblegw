@@ -5,6 +5,16 @@ type t = {
   backend_count: int
 };
 
+let flatten(data) {
+  open Ezjsonm;
+  let rec loop = (acc, l) => {
+    switch (l) {
+      | [] => acc;
+      | [x, ...xs] => loop(List.rev_append(get_list(x=>x, x), acc), xs);
+      }
+  };
+  loop([], data);
+}
 
 let add_backend_host(host, path, xargs) {
   host ++ path;
@@ -36,21 +46,6 @@ let length_of_index = (~ctx) => {
   Lwt.return(0)
 }
 
-let convert = (data) => {
-  open List;
-  let rec loop = (acc, l) => {
-    switch (l) {
-    | [] => acc;
-    | [ json, ...rest] => {
-          let item = Ezjsonm.value(json);
-          loop(cons(item, acc), rest);
-        };
-    }
-  };
-  loop([], data);
-};
-
-
 let read_last_worker(host, path, xargs) {
   let uri = add_backend_host(host, path, xargs)
   Lwt_io.printf("accessing backend uri:%s\n", uri) >>= 
@@ -58,9 +53,10 @@ let read_last_worker(host, path, xargs) {
 }
 
 
+
 let read_last = (~ctx, ~path, ~xargs) => {
   Lwt_list.map_p(host => read_last_worker(host, path, xargs), ctx.backend_uri_list) >|=
-    convert >|= Ezjsonm.list(x => x);
+    flatten >|= Ezjsonm.list(x=>x)
 }
 
 let read_latest = (~ctx) => {
