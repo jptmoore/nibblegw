@@ -6,12 +6,8 @@ type t = {
 };
 
 
-let swap_hostname(host, uri_path) {
-  let path_list = String.split_on_char('/', uri_path);
-  switch (path_list) {
-  | [_, _, _, ...leftover] => host ++ "/" ++ String.concat("/", leftover)
-  | _ => failwith("uri malformed")
-  }
+let add_backend_host(host, path, xargs) {
+  host ++ path;
 }
 
 let create = (~backend_uri_list) => {
@@ -55,15 +51,15 @@ let convert = (data) => {
 };
 
 
-let read_last_worker(~host, ~uri_path) {
-  let uri = swap_hostname(host, uri_path)
+let read_last_worker(host, path, xargs) {
+  let uri = add_backend_host(host, path, xargs)
   Lwt_io.printf("accessing backend uri:%s\n", uri) >>= 
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
 
-let read_last = (~ctx, ~uri_path) => {
-  Lwt_list.map_s(host => read_last_worker(host, uri_path), ctx.backend_uri_list) >|=
+let read_last = (~ctx, ~path, ~xargs) => {
+  Lwt_list.map_p(host => read_last_worker(host, path, xargs), ctx.backend_uri_list) >|=
     convert >|= Ezjsonm.list(x => x);
 }
 
