@@ -36,12 +36,8 @@ let take = (n, lis) => {
 
 let sort_by_timestamp_worker(x,y) {
   open Ezjsonm;
-  let dict_x = get_dict(x);
-  let dict_y = get_dict(y);
-  let ts_x = List.assoc("timestamp", dict_x);
-  let ts_y =  List.assoc("timestamp", dict_y);
-  let ts = get_float(ts_x);
-  let ts' = get_float(ts_y);
+  let ts = get_float(find(x, ["timestamp"]));
+  let ts' = get_float(find(y, ["timestamp"]));
   ts < ts' ? 1 : (-1)
 }
 
@@ -122,8 +118,8 @@ let aggregate(data, ~args) {
 }
 
 let read_last = (~ctx, ~path, ~n, ~args) => {
-  let (filtered_path, xarg_path) = get_path_from_args(args);
-  Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filtered_path), ctx.backend_uri_list) >|=
+  let (filter_path, xarg_path) = get_path_from_args(args);
+  Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
     flatten >|= sort_by_timestamp >|= take(n) >|= aggregate(~args=xarg_path) >|= Ezjsonm.list(x=>x)
 }
 
