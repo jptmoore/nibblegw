@@ -10,7 +10,7 @@ let length_in_memory: (~ctx: t) => Lwt.t(int);
 
 let length_of_index: (~ctx: t) => Lwt.t(int);
 
-let read_last: (~ctx: t, ~path: string, ~n: int, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
+let read_last: (~ctx: t, ~path: string, ~n: int, ~args: list(string)) => Lwt.t(Ezjsonm.t);
 
 let read_latest: (~ctx: t) => Lwt.t(Ezjsonm.t);
 
