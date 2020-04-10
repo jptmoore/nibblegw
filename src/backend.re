@@ -109,19 +109,22 @@ let process_args(args) {
 
 let get_path_from_args(args) {
   switch (process_args(args)) {
-    | Standard(path) => path;
-    | Filtered(path) => path;
-    | FilteredAggregated(path, _) => path;
-    | Aggregated(path) => path;
+    | Standard(path) => (path, "");
+    | Filtered(path) => (path, "");
+    | FilteredAggregated(path, xargs) => (path, xargs);
+    | Aggregated(xargs) => ("", xargs);
     | Error(m) => failwith(m)
     }
 }
 
+let aggregate(data, ~args) {
+  data;  
+}
 
 let read_last = (~ctx, ~path, ~n, ~args) => {
-  let xargs_path = get_path_from_args(args);
-  Lwt_list.map_p(host => read_last_worker(String.trim(host)++path), ctx.backend_uri_list) >|=
-    flatten >|= sort_by_timestamp >|= take(n) >|= Ezjsonm.list(x=>x)
+  let (filtered_path, xarg_path) = get_path_from_args(args);
+  Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filtered_path), ctx.backend_uri_list) >|=
+    flatten >|= sort_by_timestamp >|= take(n) >|= aggregate(~args=xarg_path) >|= Ezjsonm.list(x=>x)
 }
 
 let read_latest = (~ctx) => {
