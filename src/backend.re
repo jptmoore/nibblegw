@@ -147,12 +147,12 @@ let read_last_worker(uri) {
 
 let read_last = (~ctx, ~path, ~n, ~args) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
+  let data = Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
+    flatten >|= sort_by_timestamp >|= take(n);
   if (xarg_path == "") {
-    Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
-      flatten >|= sort_by_timestamp >|= take(n) >|= Ezjsonm.list(x=>x);
+    data >|= Ezjsonm.list(x=>x);
   } else {
-    Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
-      flatten >|= sort_by_timestamp >|= take(n) >|= aggregate(~args=xarg_path);
+    data >|= aggregate(~args=xarg_path);
   }
 }
 
