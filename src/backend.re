@@ -156,8 +156,8 @@ let read_last = (~ctx, ~path, ~n, ~args) => {
   }
 }
 
-let read_latest = (~ctx) => {
-  Lwt.return(empty_data);
+let read_latest = (~ctx, ~path, ~args) => {
+  read_last(ctx, path, 1, args);
 }
 
 
