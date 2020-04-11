@@ -72,11 +72,6 @@ let length_of_index = (~ctx) => {
   Lwt.return(0)
 }
 
-let read_last_worker(uri) {
-  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
-    () => Net.get(~uri) >|= Ezjsonm.from_string;
-}
-
 let process_args(args) {
   open String;
   switch (args) {
@@ -113,14 +108,52 @@ let get_path_from_args(args) {
     }
 }
 
+
+let count = (data) => {
+  open Ezjsonm;
+  let count = float_of_int(List.length(data));
+  dict([("count", `Float(count))]);
+};
+
+let get_value(x) {
+  open Ezjsonm;
+  get_float(find(x, ["data", "value"]));
+}
+
+let apply_aggregate(data, name, fn) {
+  open Ezjsonm;
+  let lis = List.map(x=> get_value(x), data);
+  lis |> Array.of_list |> fn |>
+    result => dict([(name, `Float(result))]);
+}
+
 let aggregate(data, ~args) {
-  data;  
+  open Oml.Util.Array;
+  open Oml.Statistics.Descriptive;  
+  switch args {
+  | "/min" => apply_aggregate(data, "min", min)
+  | "/max" => apply_aggregate(data, "max", max)
+  | "/sum" => apply_aggregate(data, "sum", sumf)
+  | "/median" => apply_aggregate(data, "median", median)
+  | "/count" => count(data)
+  | _ => failwith("invalid aggregate function")
+  }
+}
+
+let read_last_worker(uri) {
+  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+    () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
 let read_last = (~ctx, ~path, ~n, ~args) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
-  Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
-    flatten >|= sort_by_timestamp >|= take(n) >|= aggregate(~args=xarg_path) >|= Ezjsonm.list(x=>x)
+  if (xarg_path == "") {
+    Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
+      flatten >|= sort_by_timestamp >|= take(n) >|= Ezjsonm.list(x=>x);
+  } else {
+    Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
+      flatten >|= sort_by_timestamp >|= take(n) >|= aggregate(~args=xarg_path);
+  }
 }
 
 let read_latest = (~ctx) => {
