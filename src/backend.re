@@ -34,15 +34,18 @@ let take = (n, lis) => {
   rev(loop(n, [], lis));
 };
 
-let sort_by_timestamp_worker(x,y) {
+let sort_by_timestamp_worker(x,y,direction) {
   open Ezjsonm;
   let ts = get_float(find(x, ["timestamp"]));
   let ts' = get_float(find(y, ["timestamp"]));
-  ts < ts' ? 1 : (-1)
+  switch direction {
+  | `Last => ts < ts' ? 1 : (-1)
+  | `First => ts > ts' ? 1 : (-1)
+  }
 }
 
-let sort_by_timestamp(lis) {
-  List.sort((x,y) => sort_by_timestamp_worker(x,y), lis)
+let sort_by_timestamp(lis, ~direction) {
+  List.sort((x,y) => sort_by_timestamp_worker(x,y,direction), lis)
 }
 
 
@@ -145,10 +148,10 @@ let read_last_worker(uri) {
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
-let read_last = (~ctx, ~path, ~n, ~args) => {
+let read_n = (ctx, path, n, args, direction) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
   let data = Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
-    flatten >|= sort_by_timestamp >|= take(n);
+    flatten >|= sort_by_timestamp(~direction) >|= take(n);
   if (xarg_path == "") {
     data >|= Ezjsonm.list(x=>x);
   } else {
@@ -156,11 +159,21 @@ let read_last = (~ctx, ~path, ~n, ~args) => {
   }
 }
 
-let read_latest = (~ctx, ~path, ~args) => {
-  read_last(ctx, path, 1, args);
+let read_last = (~ctx, ~path, ~n, ~args) => {
+  read_n(ctx, path, n, args, `Last)
 }
 
+let read_latest = (~ctx, ~path, ~args) => {
+  read_n(ctx, path, 1, args, `Last);
+}
 
+let read_first = (~ctx, ~path, ~n, ~args) => {
+  read_n(ctx, path, n, args, `Last)
+}
+
+let read_earliest = (~ctx, ~path, ~args) => {
+  read_n(ctx, path, 1, args, `Last);
+}
 
 
 
