@@ -57,16 +57,6 @@ let create = (~backend_uri_list) => {
   }
 };
 
-let empty_data = Ezjsonm.list(Ezjsonm.unit,[]);
-
-let flush = (~ctx) => {
-  Lwt.return_unit
-}
-
-let length_of_index = (~ctx) => {
-  Lwt.return(0)
-}
-
 let process_args(args) {
   open String;
   switch (args) {
@@ -162,6 +152,11 @@ let get(uri) {
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
+let get_no_payload(uri) {
+  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+    () => Net.get(~uri);
+}
+
 let length = (~ctx, ~path) => {
   Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|= 
     aggregate_aggregate_data(~arg="/length");
@@ -173,6 +168,12 @@ let length_in_memory = (~ctx, ~path) => {
 
 let length_of_index = (~ctx, ~path) => {
   length(ctx, path)
+}
+
+let flush = (~ctx, ~path) => {
+  Lwt_list.map_p(host => get_no_payload(String.trim(host)++path), ctx.backend_uri_list) >>=
+    // in case later we decide to return a payload
+    data => Lwt.return_unit
 }
 
 let read_n = (ctx, path, n, args, direction) => {

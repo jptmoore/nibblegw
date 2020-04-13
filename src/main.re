@@ -82,8 +82,8 @@ let length_of_index = (ctx, uri_path) => {
     Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
 }
 
-let timeseries_sync = (ctx) => {
-  Backend.flush(ctx.db) >>=
+let timeseries_sync = (ctx, uri_path) => {
+  Backend.flush(ctx.db, uri_path) >>=
     () => Http_response.ok()
 }
 
@@ -98,7 +98,7 @@ let get_req = (ctx, path_list, uri_path) => {
   | [_, _, _, "ts", ids, "length"] => length(ctx, "/ts/"++ids++"/length")
   | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx, "/ts/"++ids++"/memory/length")
   | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx, "/ts/"++ids++"/index/length")
-  | [_, _, _, "ts", "sync"] => timeseries_sync(ctx)
+  | [_, _, _, "ts", "sync"] => timeseries_sync(ctx, "/ts/sync")
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
@@ -194,7 +194,7 @@ let init = () => {
 let flush_server = (ctx) => {
   Lwt_main.run {
     Lwt_io.printf("\nShutting down server...\n") >>=
-      () => Backend.flush(ctx.db) >>=
+      () => Backend.flush(ctx.db, "/ts/sync") >>=
         () => Lwt_unix.sleep(1.0) >>=
           () => Lwt_io.printf("OK\n")
   };
