@@ -171,6 +171,10 @@ let length_in_memory = (~ctx, ~path) => {
   length(ctx, path)
 }
 
+let length_of_index = (~ctx, ~path) => {
+  length(ctx, path)
+}
+
 let read_n = (ctx, path, n, args, direction) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
   let data = Lwt_list.map_p(host => get(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
