@@ -4,7 +4,7 @@ let create: (~backend_uri_list: string) => t;
 
 let flush: (~ctx: t) => Lwt.t(unit);
 
-let length: (~ctx: t) => Lwt.t(int);
+let length: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
 
 let length_in_memory: (~ctx: t) => Lwt.t(int);
 

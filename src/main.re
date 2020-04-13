@@ -66,9 +66,10 @@ let read_range = (ctx, uri_path, xargs) => {
     Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
 };
 
-let length = (ctx) => {
-  Backend.length(ctx.db) >>=
-    n => Http_response.ok(~content=Printf.sprintf("{\"length\":%d}", n), ()) 
+let length = (ctx, uri_path) => {
+  Backend.length(ctx.db, uri_path) >|=
+    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ()) 
+
 }
 
 let length_in_memory = (ctx) => {
@@ -94,7 +95,7 @@ let get_req = (ctx, path_list, uri_path) => {
   | [_, _, _, "ts", ids, "earliest", ...xargs] => read_earliest(ctx, "/ts/"++ids++"/earliest", xargs)
   | [_, _, _, "ts", ids, "since", from, ...xargs] => read_since(ctx, "/ts/"++ids++"/since/"++from, xargs)
   | [_, _, _, "ts", ids, "range", from, to_, ...xargs] => read_range(ctx, "/ts/"++ids++"/range/"++from++"/"++to_, xargs)
-  | [_, _, _, "ts", ids, "length"] => length(ctx)
+  | [_, _, _, "ts", ids, "length"] => length(ctx, "/ts/"++ids++"/length")
   | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx)
   | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx)
   | [_, _, _, "ts", "sync"] => timeseries_sync(ctx)
