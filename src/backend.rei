@@ -6,7 +6,7 @@ let flush: (~ctx: t) => Lwt.t(unit);
 
 let length: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
 
-let length_in_memory: (~ctx: t) => Lwt.t(int);
+let length_in_memory: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
 
 let length_of_index: (~ctx: t) => Lwt.t(int);
 

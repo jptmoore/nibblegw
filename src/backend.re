@@ -63,10 +63,6 @@ let flush = (~ctx) => {
   Lwt.return_unit
 }
 
-let length_in_memory = (~ctx) => {
-  Lwt.return(0)
-}
-
 let length_of_index = (~ctx) => {
   Lwt.return(0)
 }
@@ -169,6 +165,10 @@ let get(uri) {
 let length = (~ctx, ~path) => {
   Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|= 
     aggregate_aggregate_data(~arg="/length");
+}
+
+let length_in_memory = (~ctx, ~path) => {
+  length(ctx, path)
 }
 
 let read_n = (ctx, path, n, args, direction) => {
