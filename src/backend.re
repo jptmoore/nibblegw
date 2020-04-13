@@ -12,7 +12,7 @@ type xargs =
   | Aggregated(string)
   | Error(string);
 
-let flatten(data) {
+let flatten_data(data) {
   open Ezjsonm;
   let rec loop = (acc, l) => {
     switch (l) {
@@ -123,39 +123,39 @@ let get_value(x) {
   get_float(find(x, ["data", "value"]));
 }
 
-let apply_aggregate(data, name, fn) {
+let apply_aggregate_data(data, name, fn) {
   open Ezjsonm;
   let lis = List.map(x=> get_value(x), data);
   lis |> Array.of_list |> fn |>
     result => dict([(name, `Float(result))]);
 }
 
-let aggregate(data, ~args) {
+let aggregate_data(data, ~args) {
   open Oml.Util.Array;
   open Oml.Statistics.Descriptive;  
   switch args {
-  | "/min" => apply_aggregate(data, "min", min)
-  | "/max" => apply_aggregate(data, "max", max)
-  | "/sum" => apply_aggregate(data, "sum", sumf)
-  | "/median" => apply_aggregate(data, "median", median)
+  | "/min" => apply_aggregate_data(data, "min", min)
+  | "/max" => apply_aggregate_data(data, "max", max)
+  | "/sum" => apply_aggregate_data(data, "sum", sumf)
+  | "/median" => apply_aggregate_data(data, "median", median)
   | "/count" => count(data)
   | _ => failwith("invalid aggregate function")
   }
 }
 
-let read_last_worker(uri) {
+let get(uri) {
   Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
 let read_n = (ctx, path, n, args, direction) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
-  let data = Lwt_list.map_p(host => read_last_worker(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
-    flatten >|= sort_by_timestamp(~direction) >|= take(n);
+  let data = Lwt_list.map_p(host => get(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
+    flatten_data >|= sort_by_timestamp(~direction) >|= take(n);
   if (xarg_path == "") {
     data >|= Ezjsonm.list(x=>x);
   } else {
-    data >|= aggregate(~args=xarg_path);
+    data >|= aggregate_data(~args=xarg_path);
   }
 }
 
@@ -175,10 +175,45 @@ let read_earliest = (~ctx, ~path, ~args) => {
   read_n(ctx, path, 1, args, `Last);
 }
 
+let apply_aggregate_aggregate_data(data, name, fn) {
+  open Ezjsonm;
+  List.map(x => get_float(find(x, [name])), data) |>
+    Array.of_list |> fn |>
+      result => dict([(name, `Float(result))]);
+}
 
 
+let aggregate_aggregate_data(data, ~fn) {
+  open Oml.Util.Array;
+  open Oml.Statistics.Descriptive;
+  switch fn {
+  | "/sum" => apply_aggregate_aggregate_data(data, "sum", sumf)
+  | "/min" => apply_aggregate_aggregate_data(data, "min", min)
+  | "/max" => apply_aggregate_aggregate_data(data, "max", max)
+  | "/median" => apply_aggregate_aggregate_data(data, "median", median)
+  | "/count" => apply_aggregate_aggregate_data(data, "count", sumf)
+  | _ => failwith("invalid aggregate function")
+  }
+}
+
+let read_since_range = (~ctx, ~path, ~xargs) => {
+  let (filter_path, xarg_path) = get_path_from_args(xargs);
+  let data = Lwt_list.map_p(host => get(String.trim(host)++path++filter_path++xarg_path), ctx.backend_uri_list);
+  if (xarg_path == "") {
+    data >|= flatten_data >|= sort_by_timestamp(~direction=`Last) >|= Ezjsonm.list(x=>x);
+  } else {
+    data >|= aggregate_aggregate_data(~fn=xarg_path)
+  }
+}
 
 
+let read_since = (~ctx, ~path, ~xargs) => {
+  read_since_range(ctx, path, xargs)
+}
+
+let read_range = (~ctx, ~path, ~xargs) => {
+  read_since_range(ctx, path, xargs)
+}
 
 
 

@@ -17,3 +17,7 @@ let read_latest: (~ctx: t, ~path: string, ~args: list(string)) => Lwt.t(Ezjsonm.
 let read_first: (~ctx: t, ~path: string, ~n: int, ~args: list(string)) => Lwt.t(Ezjsonm.t);
 
 let read_earliest: (~ctx: t, ~path: string, ~args: list(string)) => Lwt.t(Ezjsonm.t);
+
+let read_since: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
+
+let read_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
