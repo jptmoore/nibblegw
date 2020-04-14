@@ -186,7 +186,7 @@ let random_host = (ctx, path) => {
 }
 
 let post = (~ctx, ~path, ~payload) => {
-  post_no_response(random_host(ctx, path), payload) >>=
+  post_no_response(String.trim(random_host(ctx, path)), payload) >>=
     // in case later we decide to return a payload
     data => Lwt.return_unit
 }
