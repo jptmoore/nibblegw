@@ -28,6 +28,9 @@ curl -k --request POST --data '[{"value": 6}, {"value": 7}, {"value": 8}, {"valu
 curl -k --request POST --data '[{"value": 11}, {"value": 12}, {"value": 13}, {"value": 14}, {"value": 15}]' http://localhost:5000/ts/foo
 ```
 
+The data is distributed across the two backends.
+
+
 ### Run a query
 
 ```bash
