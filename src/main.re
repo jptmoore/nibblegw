@@ -87,6 +87,16 @@ let timeseries_sync = (ctx, uri_path) => {
     () => Http_response.ok()
 }
 
+let delete_since = (ctx, uri_path, xargs) => {
+  Backend.delete_since(ctx.db, uri_path, xargs) >>=
+    () => Http_response.ok()
+};
+
+let delete_range = (ctx, uri_path, xargs) => {
+  Backend.delete_range(ctx.db, uri_path, xargs) >>=
+    () => Http_response.ok()
+};
+
 let get_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, "/ts/"++ids++"/last/"++n, n, xargs)
@@ -116,6 +126,14 @@ let post_req = (ctx, path_list, body) => {
   }
 };
 
+let delete_req = (ctx, path_list) => {
+  switch (path_list) {
+  | [_, _, _, "ts", ids, "since", from, ...xargs] => delete_since(ctx, "/ts/"++ids++"/since/"++from, xargs)
+  | [_, _, _, "ts", ids, "range", from, to_, ...xargs] => delete_range(ctx, "/ts/"++ids++"/range/"++from++"/"++to_, xargs)
+  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
+  }
+};
+
 let handle_req_worker = (ctx, req, body) => {
   let meth = req |> Request.meth;
   let uri_path = req |> Request.uri |> Uri.to_string;
@@ -123,6 +141,7 @@ let handle_req_worker = (ctx, req, body) => {
   switch (meth) {
   | `GET => get_req(ctx, path_list);
   | `POST => post_req(ctx, path_list, body);
+  | `DELETE => delete_req(ctx, path_list);
   | _ => Http_response.bad_request(~content="Error:unknown method\n", ())
   }
 };

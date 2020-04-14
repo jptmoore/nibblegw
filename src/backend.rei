@@ -23,3 +23,7 @@ let read_earliest: (~ctx: t, ~path: string, ~args: list(string)) => Lwt.t(Ezjson
 let read_since: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
 
 let read_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(Ezjsonm.t);
+
+let delete_since: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(unit);
+
+let delete_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(unit);

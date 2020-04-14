@@ -148,18 +148,23 @@ let aggregate_aggregate_data(data, ~arg) {
 }
 
 let get(uri) {
-  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+  Lwt_io.printf("getting from backend uri:%s\n", uri) >>=
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
 let get_no_response(uri) {
-  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+  Lwt_io.printf("getting from backend uri:%s\n", uri) >>=
     () => Net.get(~uri);
 }
 
 let post_no_response(uri, ~payload) {
-  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+  Lwt_io.printf("posting to backend uri:%s\n", uri) >>=
     () => Net.post(~uri, ~payload);
+}
+
+let delete_no_response(uri) {
+  Lwt_io.printf("deleting from backend uri:%s\n", uri) >>=
+    () => Net.delete(~uri);
 }
 
 let length = (~ctx, ~path) => {
@@ -240,5 +245,22 @@ let read_range = (~ctx, ~path, ~xargs) => {
   read_since_range(ctx, path, xargs)
 }
 
+let delete_since_range = (~ctx, ~path, ~xargs) => {
+  let (filter_path, xarg_path) = get_path_from_args(xargs);
+  if (xarg_path == "") {
+    Lwt_list.map_p(host => delete_no_response(String.trim(host)++path++filter_path), ctx.backend_uri_list) >>=
+      data => Lwt.return_unit;
+  } else {
+    failwith("invalid path")
+  }
+}
+
+let delete_since = (~ctx, ~path, ~xargs) => {
+  delete_since_range(ctx, path, xargs)
+}
+
+let delete_range = (~ctx, ~path, ~xargs) => {
+  delete_since_range(ctx, path, xargs)
+}
 
 
