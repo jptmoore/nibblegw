@@ -152,9 +152,14 @@ let get(uri) {
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
-let get_no_payload(uri) {
+let get_no_response(uri) {
   Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
     () => Net.get(~uri);
+}
+
+let post_no_response(uri, ~payload) {
+  Lwt_io.printf("accessing backend uri:%s\n", uri) >>=
+    () => Net.post(~uri, ~payload);
 }
 
 let length = (~ctx, ~path) => {
@@ -170,8 +175,19 @@ let length_of_index = (~ctx, ~path) => {
   length(ctx, path)
 }
 
+let random_host = (ctx, path) => {
+  let n = Random.int(ctx.backend_count);
+  List.nth(ctx.backend_uri_list, n) ++ path
+}
+
+let post = (~ctx, ~path, ~payload) => {
+  post_no_response(random_host(ctx, path), payload) >>=
+    // in case later we decide to return a payload
+    data => Lwt.return_unit
+}
+
 let flush = (~ctx, ~path) => {
-  Lwt_list.map_p(host => get_no_payload(String.trim(host)++path), ctx.backend_uri_list) >>=
+  Lwt_list.map_p(host => get_no_response(String.trim(host)++path), ctx.backend_uri_list) >>=
     // in case later we decide to return a payload
     data => Lwt.return_unit
 }

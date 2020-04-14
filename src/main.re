@@ -87,7 +87,7 @@ let timeseries_sync = (ctx, uri_path) => {
     () => Http_response.ok()
 }
 
-let get_req = (ctx, path_list, uri_path) => {
+let get_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, "/ts/"++ids++"/last/"++n, n, xargs)
   | [_, _, _, "ts", ids, "latest", ...xargs] => read_latest(ctx, "/ts/"++ids++"/latest", xargs)
@@ -103,12 +103,26 @@ let get_req = (ctx, path_list, uri_path) => {
   }
 };
 
+let post = (ctx, uri_path, body) => {
+  Cohttp_lwt.Body.to_string(body) >>=
+    payload => Backend.post(ctx.db, uri_path, payload) >>=
+      () => Http_response.ok()
+}
+
+let post_req = (ctx, path_list, body) => {
+  switch (path_list) {
+  | [_, _, _, "ts", id] => post(ctx, "/ts/"++id, body)
+  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
+  }
+};
+
 let handle_req_worker = (ctx, req, body) => {
   let meth = req |> Request.meth;
   let uri_path = req |> Request.uri |> Uri.to_string;
   let path_list = String.split_on_char('/', uri_path);
   switch (meth) {
-  | `GET => get_req(ctx, path_list, uri_path);
+  | `GET => get_req(ctx, path_list);
+  | `POST => post_req(ctx, path_list, body);
   | _ => Http_response.bad_request(~content="Error:unknown method\n", ())
   }
 };

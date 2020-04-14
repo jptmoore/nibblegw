@@ -2,6 +2,8 @@ type t;
 
 let create: (~backend_uri_list: string) => t;
 
+let post: (~ctx: t, ~path: string, ~payload: string) => Lwt.t(unit);
+
 let flush: (~ctx: t, ~path: string) => Lwt.t(unit);
 
 let length: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
