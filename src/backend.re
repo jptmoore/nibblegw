@@ -217,11 +217,11 @@ let read_latest = (~ctx, ~path, ~args) => {
 }
 
 let read_first = (~ctx, ~path, ~n, ~args) => {
-  read_n(ctx, path, n, args, `Last)
+  read_n(ctx, path, n, args, `First)
 }
 
 let read_earliest = (~ctx, ~path, ~args) => {
-  read_n(ctx, path, 1, args, `Last);
+  read_n(ctx, path, 1, args, `First);
 }
 
 
