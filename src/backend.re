@@ -105,11 +105,24 @@ let get_value(x) {
   get_float(find(x, ["data", "value"]));
 }
 
+let sum = (data) => {
+  open List;
+  let lis = map(x => get_value(x), data);
+  let sum = fold_left((+.), 0., lis);
+  Ezjsonm.dict([("sum", `Float(sum))]);
+};
+
 let apply_aggregate_data(data, name, fn) {
   open Ezjsonm;
-  let lis = List.map(x=> get_value(x), data);
-  lis |> Array.of_list |> fn |>
-    result => dict([(name, `Float(result))]);
+  // remove empty results
+  let filtered = List.filter(x => x != dict([]), data);
+  if (List.length(filtered) == 0) {
+    dict([]);
+  } else {
+    List.map(x => get_value(x), filtered) |> 
+      Array.of_list |> fn |>
+        result => dict([(name, `Float(result))]);
+  }
 }
 
 let aggregate_data(data, ~args) {
@@ -118,7 +131,7 @@ let aggregate_data(data, ~args) {
   switch args {
   | "/min" => apply_aggregate_data(data, "min", min)
   | "/max" => apply_aggregate_data(data, "max", max)
-  | "/sum" => apply_aggregate_data(data, "sum", sumf)
+  | "/sum" => sum(data)
   | "/median" => apply_aggregate_data(data, "median", median)
   | "/count" => count(data)
   | _ => failwith("invalid aggregate function")
@@ -127,9 +140,15 @@ let aggregate_data(data, ~args) {
 
 let apply_aggregate_aggregate_data(data, name, fn) {
   open Ezjsonm;
-  List.map(x => get_float(find(x, [name])), data) |>
-    Array.of_list |> fn |>
-      result => dict([(name, `Float(result))]);
+  // remove empty results
+  let filtered = List.filter(x => x != dict([]), data);
+  if (List.length(filtered) == 0) {
+    dict([]);
+  } else {
+    List.map(x => get_float(find(x, [name])), filtered) |>
+      Array.of_list |> fn |>
+        result => dict([(name, `Float(result))]);
+  }
 }
 
 
