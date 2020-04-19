@@ -282,4 +282,7 @@ let delete_range = (~ctx, ~path, ~xargs) => {
   delete_since_range(ctx, path, xargs)
 }
 
-
+let ts_names = (~ctx, ~path) => {
+  Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|=
+    Ezjsonm.list(x=>x);
+}

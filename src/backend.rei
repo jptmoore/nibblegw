@@ -27,3 +27,5 @@ let read_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(Ezjsonm.
 let delete_since: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(unit);
 
 let delete_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(unit);
+
+let ts_names: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);

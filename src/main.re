@@ -97,6 +97,12 @@ let delete_range = (ctx, uri_path, xargs) => {
     () => Http_response.ok()
 };
 
+let timeseries_names = (ctx, uri_path) => {
+  Backend.ts_names(ctx.db, uri_path) >|=
+    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+
+}
+
 let get_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, "/ts/"++ids++"/last/"++n, n, xargs)
@@ -109,6 +115,7 @@ let get_req = (ctx, path_list) => {
   | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx, "/ts/"++ids++"/memory/length")
   | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx, "/ts/"++ids++"/index/length")
   | [_, _, _, "ctl", "ts", "sync"] => timeseries_sync(ctx, "/ctl/ts/sync")
+  | [_, _, _, "info", "ts", "names"] => timeseries_names(ctx, "/info/ts/names")
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
