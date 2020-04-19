@@ -2,6 +2,13 @@
 
 Early POC but will add features such as dynamically adding and removing backends for scaleability.
 
+
+### Create a docker network to use
+
+```bash
+docker network create nibble
+```
+
 ### Start one backend
 
 ```bash
