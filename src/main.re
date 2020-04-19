@@ -108,7 +108,7 @@ let get_req = (ctx, path_list) => {
   | [_, _, _, "ts", ids, "length"] => length(ctx, "/ts/"++ids++"/length")
   | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx, "/ts/"++ids++"/memory/length")
   | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx, "/ts/"++ids++"/index/length")
-  | [_, _, _, "ts", "sync"] => timeseries_sync(ctx, "/ts/sync")
+  | [_, _, _, "ctl", "ts", "sync"] => timeseries_sync(ctx, "/ctl/ts/sync")
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
