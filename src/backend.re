@@ -282,7 +282,16 @@ let delete_range = (~ctx, ~path, ~xargs) => {
   delete_since_range(ctx, path, xargs)
 }
 
+let ts_names_value = (x) => {
+  open Ezjsonm;
+  get_strings(find(x, ["timeseries"]));
+}
+
 let ts_names = (~ctx, ~path) => {
+  open Ezjsonm;
   Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|=
-    Ezjsonm.list(x=>x);
+    List.fold_left((acc, x) => 
+      List.rev_append(ts_names_value(x), acc), []) >|=
+        List.sort_uniq((x,y) => compare(x,y)) >|=
+          x => dict([("timeseries", strings(x))])
 }
