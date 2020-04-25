@@ -12,15 +12,10 @@ type xargs =
   | Aggregated(string)
   | Error(string);
 
-let flatten_data(data) {
-  open Ezjsonm;
-  let rec loop = (acc, l) => {
-    switch (l) {
-      | [] => acc;
-      | [x, ...xs] => loop(List.rev_append(get_list(x=>x, x), acc), xs);
-      }
-  };
-  loop([], data);
+let flatten_data = (data) => {
+  open List;
+  fold_left((acc, x) => 
+    rev_append(Ezjsonm.get_list(x=>x, x), acc), [], data)
 }
 
 let take = (n, lis) => {
