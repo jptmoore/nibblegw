@@ -47,3 +47,80 @@ curl http://localhost:5000/ts/foo/length
 ```json
 {"length":15}
 ```
+
+### Get stats on the backend servers
+
+```bash
+curl http://localhost:5000/info/ts/stats
+```
+
+```json
+[
+    {
+        "http://foo:8000/info/ts/stats": [
+            {
+                "length": [
+                    {
+                        "foo": 10
+                    }
+                ]
+            },
+            {
+                "length_in_memory": [
+                    {
+                        "foo": 10
+                    }
+                ]
+            },
+            {
+                "length_on_disk": [
+                    {
+                        "foo": 0
+                    }
+                ]
+            },
+            {
+                "length_of_index": [
+                    {
+                        "foo": 0
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "http://bar:8000/info/ts/stats": [
+            {
+                "length": [
+                    {
+                        "foo": 5
+                    }
+                ]
+            },
+            {
+                "length_in_memory": [
+                    {
+                        "foo": 5
+                    }
+                ]
+            },
+            {
+                "length_on_disk": [
+                    {
+                        "foo": 0
+                    }
+                ]
+            },
+            {
+                "length_of_index": [
+                    {
+                        "foo": 0
+                    }
+                ]
+            }
+        ]
+    }
+]
+```
+
+Take a look at at the [readme](https://github.com/jptmoore/nibbledb) for other commands you can use.
