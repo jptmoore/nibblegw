@@ -166,6 +166,13 @@ let get(uri) {
     () => Net.get(~uri) >|= Ezjsonm.from_string;
 }
 
+let get_with_host(uri) {
+  open Ezjsonm;
+  Lwt_io.printf("getting from backend uri:%s\n", uri) >>=
+    () => Net.get(~uri) >|= 
+      from_string >|= x => dict([(uri, x)])
+}
+
 let get_no_response(uri) {
   Lwt_io.printf("getting from backend uri:%s\n", uri) >>=
     () => Net.get(~uri);
@@ -282,11 +289,16 @@ let ts_names_value = (x) => {
   get_strings(find(x, ["timeseries"]));
 }
 
-let ts_names = (~ctx, ~path) => {
+let names = (~ctx, ~path) => {
   open Ezjsonm;
   Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|=
     List.fold_left((acc, x) => 
       List.rev_append(ts_names_value(x), acc), []) >|=
         List.sort_uniq((x,y) => compare(x,y)) >|=
           x => dict([("timeseries", strings(x))])
+}
+
+let stats = (~ctx, ~path) => {
+  Lwt_list.map_p(host => get_with_host(String.trim(host)++path), ctx.backend_uri_list) >|= 
+    Ezjsonm.list(x=>x)
 }
