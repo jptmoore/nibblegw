@@ -25,6 +25,11 @@ let get = (~uri) => {
   get_worker(~uri);
 };
 
+let status = (~uri) => {
+  Client.get(Uri.of_string(uri)) >|=
+    ((response, _)) => Cohttp.Code.code_of_status(response.status)
+}
+
 let delete_worker = (~uri) => {
   let headers = Cohttp.Header.of_list([]);
   Client.delete(~headers=headers, Uri.of_string(uri)) >>=

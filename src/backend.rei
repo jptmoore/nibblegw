@@ -31,3 +31,7 @@ let delete_range: (~ctx: t, ~path: string, ~xargs: list(string)) => Lwt.t(unit);
 let names: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
 
 let stats: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
+
+let status: (~ctx: t, ~path: string) => Lwt.t(Ezjsonm.t);
+
+let health_check: (~ctx: t) => Lwt.t(bool);

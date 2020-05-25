@@ -43,12 +43,12 @@ let sort_by_timestamp(lis, ~direction) {
   List.sort((x,y) => sort_by_timestamp_worker(x,y,direction), lis)
 }
 
-
 let create = (~backend_uri_list) => {
-  let lis = String.split_on_char(',', backend_uri_list);
+  let hosts = String.split_on_char(',', backend_uri_list) |>
+    List.map(host => String.trim(host));
   { 
-    backend_uri_list: lis,
-    backend_count: List.length(lis)
+    backend_uri_list: hosts,
+    backend_count: List.length(hosts)
   }
 };
 
@@ -189,7 +189,7 @@ let delete_no_response(uri) {
 }
 
 let length = (~ctx, ~path) => {
-  Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|= 
+  Lwt_list.map_p(host => get(host++path), ctx.backend_uri_list) >|= 
     aggregate_aggregate_data(~arg="/length");
 }
 
@@ -207,20 +207,20 @@ let random_host = (ctx, path) => {
 }
 
 let post = (~ctx, ~path, ~payload) => {
-  post_no_response(String.trim(random_host(ctx, path)), payload) >>=
+  post_no_response(random_host(ctx, path), payload) >>=
     // in case later we decide to return a payload
     data => Lwt.return_unit
 }
 
 let flush = (~ctx, ~path) => {
-  Lwt_list.map_p(host => get_no_response(String.trim(host)++path), ctx.backend_uri_list) >>=
+  Lwt_list.map_p(host => get_no_response(host++path), ctx.backend_uri_list) >>=
     // in case later we decide to return a payload
     data => Lwt.return_unit
 }
 
 let read_n = (ctx, path, n, args, direction) => {
   let (filter_path, xarg_path) = get_path_from_args(args);
-  let data = Lwt_list.map_p(host => get(String.trim(host)++path++filter_path), ctx.backend_uri_list) >|=
+  let data = Lwt_list.map_p(host => get(host++path++filter_path), ctx.backend_uri_list) >|=
     flatten_data >|= sort_by_timestamp(~direction) >|= take(n);
   if (xarg_path == "") {
     data >|= Ezjsonm.list(x=>x);
@@ -249,7 +249,7 @@ let read_earliest = (~ctx, ~path, ~args) => {
 
 let read_since_range = (~ctx, ~path, ~xargs) => {
   let (filter_path, xarg_path) = get_path_from_args(xargs);
-  let data = Lwt_list.map_p(host => get(String.trim(host)++path++filter_path++xarg_path), ctx.backend_uri_list);
+  let data = Lwt_list.map_p(host => get(host++path++filter_path++xarg_path), ctx.backend_uri_list);
   if (xarg_path == "") {
     data >|= flatten_data >|= sort_by_timestamp(~direction=`Last) >|= Ezjsonm.list(x=>x);
   } else {
@@ -269,7 +269,7 @@ let read_range = (~ctx, ~path, ~xargs) => {
 let delete_since_range = (~ctx, ~path, ~xargs) => {
   let (filter_path, xarg_path) = get_path_from_args(xargs);
   if (xarg_path == "") {
-    Lwt_list.map_p(host => delete_no_response(String.trim(host)++path++filter_path), ctx.backend_uri_list) >>=
+    Lwt_list.map_p(host => delete_no_response(host++path++filter_path), ctx.backend_uri_list) >>=
       data => Lwt.return_unit;
   } else {
     failwith("invalid path")
@@ -291,7 +291,7 @@ let ts_names_value = (x) => {
 
 let names = (~ctx, ~path) => {
   open Ezjsonm;
-  Lwt_list.map_p(host => get(String.trim(host)++path), ctx.backend_uri_list) >|=
+  Lwt_list.map_p(host => get(host++path), ctx.backend_uri_list) >|=
     List.fold_left((acc, x) => 
       List.rev_append(ts_names_value(x), acc), []) >|=
         List.sort_uniq((x,y) => compare(x,y)) >|=
@@ -299,6 +299,17 @@ let names = (~ctx, ~path) => {
 }
 
 let stats = (~ctx, ~path) => {
-  Lwt_list.map_p(host => get_with_host(String.trim(host)++path), ctx.backend_uri_list) >|= 
+  Lwt_list.map_p(host => get_with_host(host++path), ctx.backend_uri_list) >|= 
     Ezjsonm.list(x=>x)
+}
+
+let status = (~ctx, ~path) => {
+  Lwt_list.map_p(host => get_with_host(host++path), ctx.backend_uri_list) >|= 
+    Ezjsonm.list(x=>x)
+}
+
+let health_check = (~ctx) => {
+  Lwt_list.map_p(host => Net.status(~uri=host++"/info/status"), ctx.backend_uri_list) >|=
+    List.filter(status => (status == 200)) >|=
+      List.length >|= n => ctx.backend_count == n
 }

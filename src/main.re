@@ -109,6 +109,11 @@ let timeseries_stats = (ctx, uri_path) => {
 
 }
 
+let status = (ctx, uri_path) => {
+  Backend.status(ctx.db, uri_path) >|=
+    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+}
+
 let get_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, "/ts/"++ids++"/last/"++n, n, xargs)
@@ -123,6 +128,7 @@ let get_req = (ctx, path_list) => {
   | [_, _, _, "ctl", "ts", "sync"] => timeseries_sync(ctx, "/ctl/ts/sync")
   | [_, _, _, "info", "ts", "stats"] => timeseries_stats(ctx, "/info/ts/stats")
   | [_, _, _, "info", "ts", "names"] => timeseries_names(ctx, "/info/ts/names")
+  | [_, _, _, "info", "status"] => status(ctx, "/info/status")
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
@@ -175,10 +181,15 @@ let handle_req = (ctx, req, body) => {
 
 
 let server (~ctx) = {
-  let callback = (_conn, req, body) => handle_req(ctx, req, body);
-  let http = `TCP(`Port(http_port^));
-  let https = `TLS((`Crt_file_path(cert_file^), `Key_file_path(key_file^), `No_password, `Port(http_port^)));
-  Server.create(~mode=(tls_mode^ ? https : http), Server.make(~callback, ()));
+  Backend.health_check(ctx.db) >>=
+    status => if (status == true) {
+      let callback = (_conn, req, body) => handle_req(ctx, req, body);
+      let http = `TCP(`Port(http_port^));
+      let https = `TLS((`Crt_file_path(cert_file^), `Key_file_path(key_file^), `No_password, `Port(http_port^)));
+      Server.create(~mode=(tls_mode^ ? https : http), Server.make(~callback, ()))
+    } else {
+      failwith("Check the status of the backend servers")
+    }
 };
 
 
@@ -250,6 +261,7 @@ let flush_server = (ctx) => {
 let run_server = (~ctx) => {
   let () = {
     try (Lwt_main.run(server(~ctx))) {
+    | Unix.Unix_error(_) => failwith("Check the status of the backend servers")
     | Interrupt(_) => ignore(flush_server(ctx));
     };
   };
