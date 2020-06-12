@@ -1,8 +1,8 @@
 open Lwt.Infix;
 
 type t = {
-  backend_uri_list: list(string),
-  backend_count: int
+  mutable backend_uri_list: list(string),
+  mutable backend_count: int
 };
 
 type xargs =
@@ -312,4 +312,17 @@ let health_check = (~ctx) => {
   Lwt_list.map_p(host => Net.status(~uri=host++"/info/status"), ctx.backend_uri_list) >|=
     List.filter(status => (status == 200)) >|=
       List.length >|= n => ctx.backend_count == n
+}
+
+let add_host = (~ctx, ~host) => {
+  open Ezjsonm;
+  Lwt_io.printf("got:%s\n", host) >>= () =>
+  Net.status(~uri=host++"/info/status") >|=
+    status => if (status == 200) {
+      ctx.backend_uri_list = List.cons(host, ctx.backend_uri_list);
+      ctx.backend_count = ctx.backend_count + 1;
+      dict([("add_host", string("ok"))])
+    } else {
+      dict([("add_host", string("failed"))])
+    }
 }

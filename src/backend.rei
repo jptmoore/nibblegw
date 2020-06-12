@@ -2,6 +2,8 @@ type t;
 
 let create: (~backend_uri_list: string) => t;
 
+let add_host: (~ctx: t, ~host: string) => Lwt.t(Ezjsonm.t);
+
 let post: (~ctx: t, ~path: string, ~payload: string) => Lwt.t(unit);
 
 let flush: (~ctx: t, ~path: string) => Lwt.t(unit);

@@ -133,6 +133,13 @@ let get_req = (ctx, path_list) => {
   }
 };
 
+let add_host = (ctx, body) => {
+  Cohttp_lwt.Body.to_string(body) >>=
+    host => Backend.add_host(ctx.db, host) >|=
+      Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+}
+
+
 let post = (ctx, uri_path, body) => {
   Cohttp_lwt.Body.to_string(body) >>=
     payload => Backend.post(ctx.db, uri_path, payload) >>=
@@ -142,6 +149,7 @@ let post = (ctx, uri_path, body) => {
 let post_req = (ctx, path_list, body) => {
   switch (path_list) {
   | [_, _, _, "ts", id] => post(ctx, "/ts/"++id, body)
+  | [_, _, _, "ctl", "host", "add"] => add_host(ctx, body)
   | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
   }
 };
