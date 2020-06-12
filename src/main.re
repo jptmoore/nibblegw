@@ -220,9 +220,9 @@ let parse_cmdline = () => {
     ("--enable-debug", Arg.Set(log_mode), ": turn debug mode on"), 
     ("--enable-tls", Arg.Set(tls_mode), ": use https"),
     (
-      "--backend-uri-list",
+      "--hosts",
       Arg.Set_string(backend_uri_list),
-      ": to provide the location of nibbledb server"
+      ": to provide the location of nibbledb servers"
     ), 
 
   ];
