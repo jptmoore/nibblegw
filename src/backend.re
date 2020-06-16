@@ -314,6 +314,15 @@ let health_check = (~ctx) => {
       List.length >|= n => ctx.backend_count == n
 }
 
+let validate_host = (~json) => {
+  open Ezjsonm;
+  switch (get_dict(value(json))) {
+  | [("host",`String host)] => 
+      Some(host)
+  | _ => None;
+  }
+};
+
 let add_host = (~ctx, ~host) => {
   open Ezjsonm;
   Lwt_io.printf("got:%s\n", host) >>= () =>
@@ -321,8 +330,7 @@ let add_host = (~ctx, ~host) => {
     status => if (status == 200) {
       ctx.backend_uri_list = List.cons(host, ctx.backend_uri_list);
       ctx.backend_count = ctx.backend_count + 1;
-      dict([("add_host", string("ok"))])
     } else {
-      dict([("add_host", string("failed"))])
+      failwith("failed to add host")
     }
 }

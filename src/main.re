@@ -129,14 +129,24 @@ let get_req = (ctx, path_list) => {
   | [_, _, _, "info", "ts", "stats"] => timeseries_stats(ctx, "/info/ts/stats")
   | [_, _, _, "info", "ts", "names"] => timeseries_names(ctx, "/info/ts/names")
   | [_, _, _, "info", "status"] => status(ctx, "/info/status")
-  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
+  | _ => Http_response.bad_request(~content="unknown path\n", ())
   }
 };
 
+let add_host_worker = (ctx, json) => {
+  switch(Backend.validate_host(json)) {
+  | Some(host) => Backend.add_host(ctx.db, host);
+  | None => failwith("badly formatted JSON\n")
+  };
+}
+
 let add_host = (ctx, body) => {
-  Cohttp_lwt.Body.to_string(body) >>=
-    host => Backend.add_host(ctx.db, host) >|=
-      Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+  open Ezjsonm;
+  body |> Cohttp_lwt.Body.to_string >|=
+    Ezjsonm.from_string >>= json => switch(json) {
+    | `O(_) => add_host_worker(ctx, json) 
+    | `A(lis) => Lwt_list.iter_s(x => add_host_worker(ctx, `O(get_dict(x))), lis)
+    } >>= fun () => Http_response.ok()
 }
 
 
@@ -150,7 +160,7 @@ let post_req = (ctx, path_list, body) => {
   switch (path_list) {
   | [_, _, _, "ts", id] => post(ctx, "/ts/"++id, body)
   | [_, _, _, "ctl", "host", "add"] => add_host(ctx, body)
-  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
+  | _ => Http_response.bad_request(~content="unknown path\n", ())
   }
 };
 
@@ -158,7 +168,7 @@ let delete_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "since", from, ...xargs] => delete_since(ctx, "/ts/"++ids++"/since/"++from, xargs)
   | [_, _, _, "ts", ids, "range", from, to_, ...xargs] => delete_range(ctx, "/ts/"++ids++"/range/"++from++"/"++to_, xargs)
-  | _ => Http_response.bad_request(~content="Error:unknown path\n", ())
+  | _ => Http_response.bad_request(~content="unknown path\n", ())
   }
 };
 
@@ -170,7 +180,7 @@ let handle_req_worker = (ctx, req, body) => {
   | `GET => get_req(ctx, path_list);
   | `POST => post_req(ctx, path_list, body);
   | `DELETE => delete_req(ctx, path_list);
-  | _ => Http_response.bad_request(~content="Error:unknown method\n", ())
+  | _ => Http_response.bad_request(~content="unknown method\n", ())
   }
 };
 
