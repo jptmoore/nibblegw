@@ -328,8 +328,13 @@ let add_host = (~ctx, ~host) => {
   Lwt_io.printf("got:%s\n", host) >>= () =>
   Net.status(~uri=host++"/info/status") >|=
     status => if (status == 200) {
-      ctx.backend_uri_list = List.cons(host, ctx.backend_uri_list);
-      ctx.backend_count = ctx.backend_count + 1;
+      open List;
+      if (exists(x=> x == host, ctx.backend_uri_list)) {
+        failwith("host already exists")
+      } else {
+        ctx.backend_uri_list = cons(host, ctx.backend_uri_list);
+        ctx.backend_count = ctx.backend_count + 1;
+      }
     } else {
       failwith("failed to add host")
     }
