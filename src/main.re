@@ -9,7 +9,7 @@ let log_mode = ref(false);
 let tls_mode = ref(false);
 let cert_file = ref("/tmp/server.crt");
 let key_file = ref("/tmp/server.key");
-let backend_uri_list = ref("http://localhost:8000");
+let backend_uri_list = ref("");
 
 type t = {
   db: Backend.t,

@@ -44,11 +44,18 @@ let sort_by_timestamp(lis, ~direction) {
 }
 
 let create = (~backend_uri_list) => {
-  let hosts = String.split_on_char(',', backend_uri_list) |>
-    List.map(host => String.trim(host));
-  { 
-    backend_uri_list: hosts,
-    backend_count: List.length(hosts)
+  if (backend_uri_list == "") {
+    {
+      backend_uri_list: [],
+      backend_count: 0
+    }
+  } else {
+    let hosts = String.split_on_char(',', backend_uri_list) |>
+      List.map(host => String.trim(host));
+    { 
+      backend_uri_list: hosts,
+      backend_count: List.length(hosts)
+    }
   }
 };
 
@@ -202,8 +209,12 @@ let length_of_index = (~ctx, ~path) => {
 }
 
 let random_host = (ctx, path) => {
-  let n = Random.int(ctx.backend_count);
-  List.nth(ctx.backend_uri_list, n) ++ path
+  if (ctx.backend_count == 0) {
+    failwith("no backends hosts defined")
+  } else {
+    let n = Random.int(ctx.backend_count);
+    List.nth(ctx.backend_uri_list, n) ++ path
+  }
 }
 
 let post = (~ctx, ~path, ~payload) => {
