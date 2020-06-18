@@ -4,7 +4,7 @@ let create: (~backend_uri_list: string) => t;
 
 let validate_host: (~json: Ezjsonm.t) => option(string);
 
-let add_host: (~ctx: t, ~host: string) => Lwt.t(unit);
+let host_add: (~ctx: t, ~host: string) => Lwt.t(unit);
 
 let host_list: (~ctx: t) => Lwt.t(Ezjsonm.t);
 

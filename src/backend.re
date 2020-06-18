@@ -334,7 +334,7 @@ let validate_host = (~json) => {
   }
 };
 
-let add_host = (~ctx, ~host) => {
+let host_add = (~ctx, ~host) => {
   open Ezjsonm;
   Lwt_io.printf("got:%s\n", host) >>= () =>
   Net.status(~uri=host++"/info/status") >|=
