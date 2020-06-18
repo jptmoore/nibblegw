@@ -114,6 +114,16 @@ let status = (ctx, uri_path) => {
     Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
 }
 
+let host_list = (ctx) => {
+  Backend.host_list(ctx.db) >|=
+    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+}
+
+let host_count = (ctx) => {
+  Backend.host_count(ctx.db) >|=
+    Ezjsonm.to_string >>= s => Http_response.ok(~content=s, ())
+}
+
 let get_req = (ctx, path_list) => {
   switch (path_list) {
   | [_, _, _, "ts", ids, "last", n, ...xargs] => read_last(ctx, "/ts/"++ids++"/last/"++n, n, xargs)
@@ -126,6 +136,8 @@ let get_req = (ctx, path_list) => {
   | [_, _, _, "ts", ids, "memory", "length"] => length_in_memory(ctx, "/ts/"++ids++"/memory/length")
   | [_, _, _, "ts", ids, "index", "length"] => length_of_index(ctx, "/ts/"++ids++"/index/length")
   | [_, _, _, "ctl", "ts", "sync"] => timeseries_sync(ctx, "/ctl/ts/sync")
+  | [_, _, _, "info", "host", "list"] => host_list(ctx)
+  | [_, _, _, "info", "host", "count"] => host_count(ctx)
   | [_, _, _, "info", "ts", "stats"] => timeseries_stats(ctx, "/info/ts/stats")
   | [_, _, _, "info", "ts", "names"] => timeseries_names(ctx, "/info/ts/names")
   | [_, _, _, "info", "status"] => status(ctx, "/info/status")

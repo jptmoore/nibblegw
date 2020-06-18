@@ -6,6 +6,10 @@ let validate_host: (~json: Ezjsonm.t) => option(string);
 
 let add_host: (~ctx: t, ~host: string) => Lwt.t(unit);
 
+let host_list: (~ctx: t) => Lwt.t(Ezjsonm.t);
+
+let host_count: (~ctx: t) => Lwt.t(Ezjsonm.t);
+
 let post: (~ctx: t, ~path: string, ~payload: string) => Lwt.t(unit);
 
 let flush: (~ctx: t, ~path: string) => Lwt.t(unit);

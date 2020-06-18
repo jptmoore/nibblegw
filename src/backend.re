@@ -350,3 +350,15 @@ let add_host = (~ctx, ~host) => {
       failwith("failed to add host")
     }
 }
+
+let host_list = (~ctx) => {
+  open Ezjsonm;
+  let hosts = strings(ctx.backend_uri_list);
+  Lwt.return(dict([("hosts", hosts)]));
+}
+
+let host_count = (~ctx) => {
+  open Ezjsonm;
+  let count = int(ctx.backend_count);
+  Lwt.return(dict([("count", count)]));
+}
