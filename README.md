@@ -48,18 +48,18 @@ curl http://localhost:5000/ts/foo/length
 {"length":15}
 ```
 
-## Add more backend hosts
+### Add more backend hosts
 
 ```bash
 curl -X POST 'http://localhost:5000/ctl/host/add' -d '[{"host":"http://localhost:8000"}]'
 ```
-## List the backend hosts
+### List the backend hosts
 
 ```bash
 curl 'http://localhost:5000/ctl/host/list'
 ```
 
-## Get the number of backend hosts
+### Get the number of backend hosts
 
 ```bash
 curl 'http://localhost:5000/ctl/host/count'
