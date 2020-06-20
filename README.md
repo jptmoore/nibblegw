@@ -1,7 +1,6 @@
 # Gateway for nibbledb
 
-Early POC but will add features such as dynamically adding and removing backends for scaleability.
-
+A frontend gateway to scale nibbledb.
 
 ### Create a docker network to use
 
@@ -51,7 +50,7 @@ curl http://localhost:5000/ts/foo/length
 ### Add more backend hosts
 
 ```bash
-curl -X POST 'http://localhost:5000/ctl/host/add' -d '[{"host":"http://localhost:8000"}]'
+curl -X POST 'http://localhost:5000/ctl/host/add' -d '[{"host":"http://foo:8000"}]'
 ```
 ### List the backend hosts
 
