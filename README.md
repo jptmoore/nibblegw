@@ -24,7 +24,7 @@ docker run --rm -it --name bar --network="nibble" jptmoore/nibbledb /home/nibble
 ### Start the gateway
 
 ```bash
-docker run -p 5000:5000 --rm -it --network="nibble" jptmoore/nibblegw /home/nibble/nibblegw --backend-uri-list "http://foo:8000, http://bar:8000"
+docker run -p 5000:5000 --rm -it --network="nibble" jptmoore/nibblegw /home/nibble/nibblegw --hosts "http://foo:8000, http://bar:8000"
 ```
 
 ### Post some data
@@ -46,6 +46,23 @@ curl http://localhost:5000/ts/foo/length
 
 ```json
 {"length":15}
+```
+
+## Add more backend hosts
+
+```bash
+curl -X POST 'http://localhost:5000/ctl/host/add' -d '[{"host":"http://localhost:8000"}]'
+```
+## List the backend hosts
+
+```bash
+curl 'http://localhost:5000/ctl/host/list'
+```
+
+## Get the number of backend hosts
+
+```bash
+curl 'http://localhost:5000/ctl/host/count'
 ```
 
 ### Get stats on the backend servers
