@@ -2,8 +2,6 @@ open Lwt.Infix;
 
 open Cohttp;
 
-open Cohttp_lwt_unix;
-
 let http_port = ref(5000);
 let log_mode = ref(false);
 let tls_mode = ref(false);
@@ -20,6 +18,7 @@ exception Interrupt(string);
 
 
 module Http_response {
+  open Cohttp_lwt_unix;
   let json_header = Header.of_list([("Content-Type", "application/json")]);
   let text_header = Header.of_list([("Content-Type", "text/plain")]);
   let ok = (~content="", ()) => {
@@ -147,8 +146,13 @@ let get_req = (ctx, path_list) => {
 
 let host_add_worker = (ctx, json) => {
   switch(Backend.validate_host(json)) {
-  | Some(host) => Backend.host_add(ctx.db, host);
-  | None => failwith("badly formatted JSON\n")
+  | Some(host) => 
+    if (Net.validate_host(host) == true) {
+      Backend.host_add(ctx.db, host);
+    } else {
+      failwith("invalid host")
+    }
+  | None => failwith("badly formatted JSON")
   };
 }
 
@@ -211,6 +215,7 @@ let handle_req = (ctx, req, body) => {
 
 
 let server (~ctx) = {
+  open Cohttp_lwt_unix;
   Backend.health_check(ctx.db) >>=
     status => if (status == true) {
       let callback = (_conn, req, body) => handle_req(ctx, req, body);

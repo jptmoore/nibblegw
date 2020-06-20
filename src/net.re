@@ -39,3 +39,23 @@ let delete_worker = (~uri) => {
 let delete = (~uri) => {
   delete_worker(~uri);
 };
+
+let validate_host_worker = (name) => {
+  switch (String.split_on_char(':', name)) {
+    | [name, port] => 
+      try {
+        ignore(Unix.gethostbyname(name));
+        true;
+      } {
+      | Not_found => false
+      };
+    | _ => false;
+    }
+}
+
+let validate_host = (~host) => {
+  switch (String.split_on_char('/', host)) {
+  | ["http:"|"https:",_,name] => validate_host_worker(name);
+  | _ => false;
+  }
+}
