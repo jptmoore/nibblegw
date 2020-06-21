@@ -50,19 +50,54 @@ curl http://localhost:5000/ts/foo/length
 ### Add more backend hosts
 
 ```bash
-curl -X POST 'http://localhost:5000/ctl/host/add' -d '[{"host":"http://foo:8000"}]'
+curl -X POST http://localhost:5000/ctl/host/add -d '[{"host":"http://foo:8000"}]'
 ```
+
+```
+Error:host already exists
+```
+
+```bash
+docker run --rm -it --name baz --network="nibble" jptmoore/nibbledb /home/nibble/nibbledb
+```
+
+```bash
+curl -X POST http://localhost:5000/ctl/host/add -d '[{"host":"http://baz:8000"}]'
+```
+
+
 ### List the backend hosts
 
 ```bash
-curl 'http://localhost:5000/ctl/host/list'
+curl http://localhost:5000/info/host/list
+```
+
+```json
+{"hosts":["http://baz:8000","http://foo:8000","http://bar:8000"]}
 ```
 
 ### Get the number of backend hosts
 
 ```bash
-curl 'http://localhost:5000/ctl/host/count'
+curl http://localhost:5000/info/host/count
 ```
+
+```json
+{"count":3}
+```
+
+### Get names of time series
+
+```bash
+curl http://localhost:5000/info/ts/names
+```
+
+```json
+{"timeseries":["foo"]}
+```
+
+Which means across our 3 backend servers named foo,bar and baz we have created one time series called foo.
+
 
 ### Get stats on the backend servers
 
@@ -72,70 +107,86 @@ curl http://localhost:5000/info/ts/stats
 
 ```json
 [
-    {
-        "http://foo:8000/info/ts/stats": [
-            {
-                "length": [
-                    {
-                        "foo": 10
-                    }
-                ]
-            },
-            {
-                "length_in_memory": [
-                    {
-                        "foo": 10
-                    }
-                ]
-            },
-            {
-                "length_on_disk": [
-                    {
-                        "foo": 0
-                    }
-                ]
-            },
-            {
-                "length_of_index": [
-                    {
-                        "foo": 0
-                    }
-                ]
-            }
+  {
+    "http://baz:8000/info/ts/stats": [
+      {
+        "length": []
+      },
+      {
+        "length_in_memory": []
+      },
+      {
+        "length_on_disk": []
+      },
+      {
+        "length_of_index": []
+      }
+    ]
+  },
+  {
+    "http://foo:8000/info/ts/stats": [
+      {
+        "length": [
+          {
+            "foo": 10
+          }
         ]
-    },
-    {
-        "http://bar:8000/info/ts/stats": [
-            {
-                "length": [
-                    {
-                        "foo": 5
-                    }
-                ]
-            },
-            {
-                "length_in_memory": [
-                    {
-                        "foo": 5
-                    }
-                ]
-            },
-            {
-                "length_on_disk": [
-                    {
-                        "foo": 0
-                    }
-                ]
-            },
-            {
-                "length_of_index": [
-                    {
-                        "foo": 0
-                    }
-                ]
-            }
+      },
+      {
+        "length_in_memory": [
+          {
+            "foo": 10
+          }
         ]
-    }
+      },
+      {
+        "length_on_disk": [
+          {
+            "foo": 0
+          }
+        ]
+      },
+      {
+        "length_of_index": [
+          {
+            "foo": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "http://bar:8000/info/ts/stats": [
+      {
+        "length": [
+          {
+            "foo": 5
+          }
+        ]
+      },
+      {
+        "length_in_memory": [
+          {
+            "foo": 5
+          }
+        ]
+      },
+      {
+        "length_on_disk": [
+          {
+            "foo": 0
+          }
+        ]
+      },
+      {
+        "length_of_index": [
+          {
+            "foo": 0
+          }
+        ]
+      }
+    ]
+  }
 ]
 ```
 
