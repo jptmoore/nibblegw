@@ -334,21 +334,70 @@ let validate_host = (~json) => {
   }
 };
 
+let host_exists = (~ctx, ~host) => {
+  List.exists(x=> x == host, ctx.backend_uri_list)
+}
+
 let host_add = (~ctx, ~host) => {
   open Ezjsonm;
-  Lwt_io.printf("got:%s\n", host) >>= () =>
   Net.status(~uri=host++"/info/status") >|=
     status => if (status == 200) {
-      open List;
-      if (exists(x=> x == host, ctx.backend_uri_list)) {
+      if (host_exists(ctx, host)) {
         failwith("host already exists")
       } else {
-        ctx.backend_uri_list = cons(host, ctx.backend_uri_list);
+        ctx.backend_uri_list = List.cons(host, ctx.backend_uri_list);
         ctx.backend_count = ctx.backend_count + 1;
       }
     } else {
       failwith("failed to add host")
     }
+}
+
+let handle_index_worker = (host, series, t1,t2) => {
+  let uri = Printf.sprintf("%s/ts/%s/range/%0.f/%0.f\n", host, series, t1, t2);
+  Lwt_io.printf("%s\n", uri);
+}
+
+let handle_index = (host, json) => {
+  open Ezjsonm;
+  let rec loop = (l) => {
+    switch (l) {
+      | [(ts,`A([]))] => Lwt.return_unit;
+      | [(ts, `A([`A([x,y]), ...rest]))]  => {
+          handle_index_worker(host, ts, get_float(x), get_float(y)) >>= 
+            () => loop([(ts, `A(rest))]);
+        }
+      | _ => failwith("badly formatted json");
+    }
+  }
+  loop(get_dict(value(json)));
+}
+
+let get_index_worker = (host, series) => {
+  get(host++"/ts/"++series++"/index") >>= handle_index(host)
+}
+
+let get_index = (host, indexes) => {
+  Lwt_list.iter_s(series => get_index_worker(host, series), indexes);
+}
+
+let host_remove_worker = (ctx, host) => {
+  open Ezjsonm;
+  get(host++"/info/ts/names") >|=
+    data => switch(get_dict(data)) {
+    | [("timeseries", arr)] => get_index(host, get_strings(arr))
+    | _ => failwith("unexpected data")
+    }
+}
+
+let host_remove = (~ctx, ~host) => {
+  if (host_exists(ctx, host)) {
+    ctx.backend_uri_list = List.filter(x => x != host, ctx.backend_uri_list);
+    ctx.backend_count = ctx.backend_count - 1;
+  } else {
+    failwith("host does not exists")
+  }
+  Lwt.return_unit;
 }
 
 let host_list = (~ctx) => {

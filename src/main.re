@@ -144,6 +144,14 @@ let get_req = (ctx, path_list) => {
   }
 };
 
+let handle_json(data) {
+  try {
+    Ezjsonm.from_string(data)
+  } {
+  | _ => failwith("badly formatted json");
+  };
+}
+
 let host_add_worker = (ctx, json) => {
   switch(Backend.validate_host(json)) {
   | Some(host) => 
@@ -152,19 +160,34 @@ let host_add_worker = (ctx, json) => {
     } else {
       failwith("invalid host")
     }
-  | None => failwith("badly formatted JSON")
+  | None => failwith("badly formatted json")
   };
 }
 
 let host_add = (ctx, body) => {
   open Ezjsonm;
   body |> Cohttp_lwt.Body.to_string >|=
-    Ezjsonm.from_string >>= json => switch(json) {
+    handle_json >>= json => switch(json) {
     | `O(_) => host_add_worker(ctx, json) 
     | `A(lis) => Lwt_list.iter_s(x => host_add_worker(ctx, `O(get_dict(x))), lis)
     } >>= fun () => Http_response.ok()
 }
 
+let host_remove_worker = (ctx, json) => {
+  switch(Backend.validate_host(json)) {
+  | Some(host) => Backend.host_remove(ctx.db, host);
+  | None => failwith("badly formatted json")
+  };
+}
+
+let host_remove = (ctx, body) => {
+  open Ezjsonm;
+  body |> Cohttp_lwt.Body.to_string >|=
+    handle_json >>= json => switch(json) {
+    | `O(_) => host_remove_worker(ctx, json) 
+    | `A(lis) => Lwt_list.iter_s(x => host_remove_worker(ctx, `O(get_dict(x))), lis)
+    } >>= fun () => Http_response.ok()
+}
 
 let post = (ctx, uri_path, body) => {
   Cohttp_lwt.Body.to_string(body) >>=
@@ -176,6 +199,7 @@ let post_req = (ctx, path_list, body) => {
   switch (path_list) {
   | [_, _, _, "ts", id] => post(ctx, "/ts/"++id, body)
   | [_, _, _, "ctl", "host", "add"] => host_add(ctx, body)
+  | [_, _, _, "ctl", "host", "remove"] => host_remove(ctx, body)
   | _ => Http_response.bad_request(~content="unknown path\n", ())
   }
 };

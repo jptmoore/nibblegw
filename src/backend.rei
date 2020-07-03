@@ -6,6 +6,8 @@ let validate_host: (~json: Ezjsonm.t) => option(string);
 
 let host_add: (~ctx: t, ~host: string) => Lwt.t(unit);
 
+let host_remove: (~ctx: t, ~host: string) => Lwt.t(unit);
+
 let host_list: (~ctx: t) => Lwt.t(Ezjsonm.t);
 
 let host_count: (~ctx: t) => Lwt.t(Ezjsonm.t);
