@@ -391,10 +391,11 @@ let host_remove_worker = (ctx, host) => {
 }
 
 let host_remove = (~ctx, ~host) => {
+  ctx.backend_count == 1 ? failwith("can't remove the only host") : ()
   if (host_exists(ctx, host)) {
     ctx.backend_uri_list = List.filter(x => x != host, ctx.backend_uri_list);
     ctx.backend_count = ctx.backend_count - 1;
-    host_remove_worker(ctx, host);
+    Net.get(host++"/ctl/ts/sync") >>= x => host_remove_worker(ctx, host);
   } else {
     failwith("host does not exists")
   }
