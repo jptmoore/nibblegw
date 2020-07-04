@@ -65,6 +65,14 @@ docker run --rm -it --name baz --network="nibble" jptmoore/nibbledb /home/nibble
 curl -X POST http://localhost:5000/ctl/host/add -d '[{"host":"http://baz:8000"}]'
 ```
 
+### Removing backend hosts
+
+```bash
+curl -X POST http://localhost:5000/ctl/host/remove -d '[{"host":"http://baz:8000"}]'
+```
+
+The data from the removed backend host will be distributed across the remaining backends.
+
 
 ### List the backend hosts
 
@@ -73,7 +81,7 @@ curl http://localhost:5000/info/host/list
 ```
 
 ```json
-{"hosts":["http://baz:8000","http://foo:8000","http://bar:8000"]}
+{"hosts":["http://foo:8000","http://bar:8000"]}
 ```
 
 ### Get the number of backend hosts
@@ -83,7 +91,7 @@ curl http://localhost:5000/info/host/count
 ```
 
 ```json
-{"count":3}
+{"count":2}
 ```
 
 ### Get names of time series
@@ -96,8 +104,7 @@ curl http://localhost:5000/info/ts/names
 {"timeseries":["foo"]}
 ```
 
-Which means across our 3 backend servers named foo,bar and baz we have created one time series called foo.
-
+Which means across our backend servers named foo and bar we have created one time series called foo.
 
 ### Get stats on the backend servers
 
@@ -107,22 +114,6 @@ curl http://localhost:5000/info/ts/stats
 
 ```json
 [
-  {
-    "http://baz:8000/info/ts/stats": [
-      {
-        "length": []
-      },
-      {
-        "length_in_memory": []
-      },
-      {
-        "length_on_disk": []
-      },
-      {
-        "length_of_index": []
-      }
-    ]
-  },
   {
     "http://foo:8000/info/ts/stats": [
       {
