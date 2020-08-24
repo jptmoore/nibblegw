@@ -68,17 +68,20 @@ let process_args(args) {
     | ["filter", name, "equals", value, "max"] => FilteredAggregated("/filter/"++name++"/equals/"++value, "/max");
     | ["filter", name, "equals", value, "sum"] => FilteredAggregated("/filter/"++name++"/equals/"++value, "/sum");
     | ["filter", name, "equals", value, "median"] => FilteredAggregated("/filter/"++name++"/equals/"++value, "/median");
+    | ["filter", name, "equals", value, "mean"] => FilteredAggregated("/filter/"++name++"/equals/"++value, "/mean");
     | ["filter", name, "equals", value, "count"] => FilteredAggregated("/filter/"++name++"/equals/"++value, "/count");
     | ["filter", name, "contains", value] => Filtered("/filter/"++name++"/contains/"++value);
     | ["filter", name, "contains", value, "min"] => FilteredAggregated("/filter/++name++/contains/"++value, "/min");
     | ["filter", name, "contains", value, "max"] => FilteredAggregated("/filter/++name++/contains/"++value, "/max");
     | ["filter", name, "contains", value, "sum"] => FilteredAggregated("/filter/++name++/contains/"++value, "/sum");
     | ["filter", name, "contains", value, "median"] => FilteredAggregated("/filter/++name++/contains/"++value, "/median");
+    | ["filter", name, "contains", value, "mean"] => FilteredAggregated("/filter/++name++/contains/"++value, "/mean");
     | ["filter", name, "contains", value, "count"] => FilteredAggregated("/filter/++name++/contains/"++value, "/count");
     | ["min"] => Aggregated("/min");
     | ["max"] => Aggregated("/max");
     | ["sum"] => Aggregated("/sum");
     | ["median"] => Aggregated("/median");
+    | ["mean"] => Aggregated("/mean");
     | ["count"] => Aggregated("/count");
     | _ => Error("invalid path");
     }
@@ -104,7 +107,7 @@ let count = (data) => {
 
 let get_value(x) {
   open Ezjsonm;
-  get_float(find(x, ["data", "value"]));
+  get_float(find(x, ["value"]));
 }
 
 let sum = (data) => {
@@ -135,6 +138,7 @@ let aggregate_data(data, ~args) {
   | "/max" => apply_aggregate_data(data, "max", max)
   | "/sum" => sum(data)
   | "/median" => apply_aggregate_data(data, "median", median)
+  | "/mean" => apply_aggregate_data(data, "mean", mean) 
   | "/count" => count(data)
   | _ => failwith("invalid aggregate function")
   }
@@ -162,6 +166,7 @@ let aggregate_aggregate_data(data, ~arg) {
   | "/min" => apply_aggregate_aggregate_data(data, "min", min)
   | "/max" => apply_aggregate_aggregate_data(data, "max", max)
   | "/median" => apply_aggregate_aggregate_data(data, "median", median)
+  | "/mean" => apply_aggregate_aggregate_data(data, "mean", mean)
   | "/count" => apply_aggregate_aggregate_data(data, "count", sumf)
   | "/length" => apply_aggregate_aggregate_data(data, "length", sumf)
   | _ => failwith("invalid aggregate function")
