@@ -311,7 +311,7 @@ let init = () => {
 let flush_server = (ctx) => {
   Lwt_main.run {
     Lwt_io.printf("\nShutting down server...\n") >>=
-      () => Backend.flush(ctx.db, "/ts/sync") >>=
+      () => Backend.flush(ctx.db, "/ctl/ts/sync") >>=
         () => Lwt_unix.sleep(1.0) >>=
           () => Lwt_io.printf("OK\n")
   };
